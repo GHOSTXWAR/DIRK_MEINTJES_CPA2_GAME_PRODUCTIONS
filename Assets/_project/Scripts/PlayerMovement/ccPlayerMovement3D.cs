@@ -1,7 +1,8 @@
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-public class ccPlayerMovement3D : MonoBehaviour
+public class ccPlayerMovement3D : NetworkBehaviour
 {
 
     public CharacterController controller;
@@ -13,21 +14,21 @@ public class ccPlayerMovement3D : MonoBehaviour
     public float sprintMagnitude = 2.0f;
     private float gravityValue = -9.8f;
     private float initialPlayerSpeed = 0;
-    
+
 
     public InputSystem_Actions playerMovement;
     private InputAction move;
     private InputAction sprint;
     private InputAction jump;
     private InputAction crouch;
-    
+
 
     public SPSystem staminaSys;
     public Transform playerHead;
 
     private Vector3 v3playerHeadPosition;
 
-    private bool DoubleJumpReady = false,canDoubleJump = false;
+    private bool DoubleJumpReady = false, canDoubleJump = false;
 
     private float CoyoteTime;
     [SerializeField] private float CoyoteTimeMax;
@@ -41,6 +42,8 @@ public class ccPlayerMovement3D : MonoBehaviour
     }
     private void OnEnable()
     {
+
+
         crouch = playerMovement.Player.Crouch;
         jump = playerMovement.Player.Jump;
         sprint = playerMovement.Player.Sprint;
@@ -75,11 +78,14 @@ public class ccPlayerMovement3D : MonoBehaviour
     }
     void PlayerJump()
     {
-        playerVelocity.y = Mathf.Sqrt(jumpHeight * -2.0f * gravityValue );
+        playerVelocity.y = Mathf.Sqrt(jumpHeight * -2.0f * gravityValue);
     }
     // Update is called once per frame
     private void FixedUpdate()
     {
+
+        if (!IsOwner) return;
+
         //<jump>
         if ((jump.ReadValue<float>() == 1) && (IsGrounded()))
         {
@@ -107,30 +113,34 @@ public class ccPlayerMovement3D : MonoBehaviour
         else if ((playerSpeed != initialPlayerSpeed && (sprint.ReadValue<float>() == 0)) || staminaSys.SP <= 0)
         {
             playerSpeed = initialPlayerSpeed;
-            staminaSys.isSprinting = false;                    
+            staminaSys.isSprinting = false;
         }
-        
+
 
     }
     void Update()
     {
+
+        if (!IsOwner) return;
+
         CoyoteControl();
         groundedPlayer = IsGrounded();
-        if (groundedPlayer && playerVelocity.y < 0) {
+        if (groundedPlayer && playerVelocity.y < 0)
+        {
             playerVelocity.y = 0f;
         }
-        Vector3 v3move = new (move.ReadValue<Vector2>().x, 0, move.ReadValue<Vector2>().y);
+        Vector3 v3move = new(move.ReadValue<Vector2>().x, 0, move.ReadValue<Vector2>().y);
         v3move = Vector3.ClampMagnitude(v3move, 1f); // fix for fast diagonal movement
-        
-        
-       
+
+
+
         //gravity
         playerVelocity.y += gravityValue * Time.deltaTime;
 
-       Vector3 finalMove = transform.TransformDirection((v3move * playerSpeed) + (playerVelocity.y * Vector3.up));
-       controller.Move(finalMove * Time.deltaTime);
+        Vector3 finalMove = transform.TransformDirection((v3move * playerSpeed) + (playerVelocity.y * Vector3.up));
+        controller.Move(finalMove * Time.deltaTime);
 
-        if (groundedPlayer && (finalMove.x != 0 || finalMove.z != 0)) 
+        if (groundedPlayer && (finalMove.x != 0 || finalMove.z != 0))
         {
             SoundManager.Instance.PlayFootstepSound();
         }
@@ -139,8 +149,8 @@ public class ccPlayerMovement3D : MonoBehaviour
             SoundManager.Instance.StopFootstepSound();
         }
 
-        
-        
+
+
 
     }
-}
+}
